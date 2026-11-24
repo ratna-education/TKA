@@ -115,7 +115,7 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-blue-200">
 
   <!-- ===================================================================== -->
-  <!-- HALAMAN 1: HALAMAN AWAL / LOGIN PESERTA (Menerapkan Perintah 3A)     -->
+  <!-- HALAMAN 1: HALAMAN AWAL / LOGIN PESERTA                               -->
   <!-- ===================================================================== -->
   <main id="page-login" class="flex-grow flex items-center justify-center p-4 sm:p-6 relative">
     <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8 animate-fade-in">
@@ -299,7 +299,7 @@
         <span id="login-alert-text">Maaf, token yang Anda masukkan salah. Silakan ulangi Kembali.</span>
       </div>
 
-      <!-- Form Input Identitas Peserta (AREA TAMBAHAN PERINTAH 3A) -->
+      <!-- Form Input Identitas Peserta -->
       <form id="login-form" class="space-y-4" novalidate>
         <div>
           <label for="input-nama" class="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap Peserta</label>
@@ -324,7 +324,6 @@
           />
         </div>
 
-        <!-- Input untuk Kelas Siswa (BAGIAN DARI 3A) -->
         <div>
           <label for="input-kelas" class="block text-sm font-semibold text-slate-700 mb-1">Kelas</label>
           <input
@@ -523,7 +522,7 @@
             </button>
           </div>
 
-          <!-- Tombol Selesai (Hanya tampil pada soal terakhir - AREA TAMBAHAN PERINTAH 3B) -->
+          <!-- Tombol Selesai (Hanya tampil pada soal terakhir) -->
           <button
             type="button"
             id="btn-selesai"
@@ -581,6 +580,12 @@
           Jawaban Benar: <span id="final-correct-count" class="font-bold text-slate-700">0</span> dari 3 soal
         </p>
       </div>
+
+      <!-- Status Penyimpanan ke Google Spreadsheet -->
+      <div id="sync-status" class="text-xs font-semibold px-4 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
+        Sedang menyimpan hasil ke database sekolah...
+      </div>
+
       <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-sm text-left space-y-1">
         <div class="flex justify-between">
           <span class="text-slate-500">Nama Peserta:</span>
@@ -610,12 +615,11 @@
   </section>
 
   <!-- ===================================================================== -->
-  <!-- LOGIKA JAVASCRIPT APLIKASI TKA (AREA TAMBAHAN PERINTAH 3B)          -->
+  <!-- LOGIKA JAVASCRIPT APLIKASI TKA                                        -->
   <!-- ===================================================================== -->
   <script>
-    // --- KONFIGURASI & INTEGRASI GOOGLE SHEETS (PERINTAH 3B) ---
-    // !!! GANTI XXXXX DENGAN LINK WEB APP RAHASIA DARI DEPLOYMENT APPS SCRIPT ANDA !!!
-    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyBxphIojpOGu-B5p3lfEfceKAGFXSY6rPKAqpeotsIU3E15HfEhu2Mf8itktieGFxw/exec";
+    // --- KONFIGURASI & INTEGRASI GOOGLE SHEETS ---
+    const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzkE_EAAFfgEAkT3D2uCtR0MVNtLu18yNMEJpuUfaVDS0OXPT7fu0reIxq3YQWyGzpP/exec";
 
     // Token resmi yang valid
     const VALID_TOKEN = "123456";
@@ -688,7 +692,7 @@
     const loginForm = document.getElementById("login-form");
     const inputNama = document.getElementById("input-nama");
     const inputNisn = document.getElementById("input-nisn");
-    const inputKelas = document.getElementById("input-kelas"); // Input baru 3A
+    const inputKelas = document.getElementById("input-kelas");
     const inputToken = document.getElementById("input-token");
     const loginAlert = document.getElementById("login-alert");
     const loginAlertText = document.getElementById("login-alert-text");
@@ -696,24 +700,33 @@
     const modalPetunjuk = document.getElementById("modal-petunjuk");
     const btnMulaiUjian = document.getElementById("btn-mulai-ujian");
 
-    // --- FUNGSI PENGIRIMAN DATA KE GOOGLE SHEETS (BAGIAN DARI PERINTAH 3B) ---
+    // --- FUNGSI PENGIRIMAN DATA KE GOOGLE SHEETS ---
     async function kirimKeDatabase(dataFinal) {
+      const syncStatusEl = document.getElementById("sync-status");
+      syncStatusEl.textContent = "Sedang menyimpan hasil ke database sekolah...";
+      syncStatusEl.className = "text-xs font-semibold px-4 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200";
+
       try {
-        // Menggunakan metode POST dengan mode no-cors untuk menghindari masalah CORS
         const response = await fetch(URL_APPS_SCRIPT, {
           method: "POST",
-          mode: "no-cors", 
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "text/plain;charset=utf-8"
           },
           body: JSON.stringify(dataFinal)
         });
-        // Catatan: mode 'no-cors' tidak mengembalikan respons JSON yang bisa dibaca,
-        // asalkan Apps Script menerima, data akan masuk ke Sheet.
-        console.log("Permintaan pengiriman data terkirim.");
+
+        const result = await response.json();
+        if (result.status === "sukses") {
+          syncStatusEl.textContent = "✓ Nilai dan data peserta berhasil tersimpan ke Spreadsheet.";
+          syncStatusEl.className = "text-xs font-semibold px-4 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200";
+        } else {
+          syncStatusEl.textContent = "⚠ Gagal menyimpan otomatis: " + (result.message || "Kesalahan server");
+          syncStatusEl.className = "text-xs font-semibold px-4 py-2 rounded-xl bg-red-50 text-red-700 border border-red-200";
+        }
       } catch (error) {
         console.error("Error:", error);
-        alert("Terjadi kesalahan saat menyimpan data ke database.");
+        syncStatusEl.textContent = "⚠ Terjadi kendala jaringan saat menyimpan ke database. Silakan tangkap layar (screenshot) nilai ini.";
+        syncStatusEl.className = "text-xs font-semibold px-4 py-2 rounded-xl bg-red-50 text-red-700 border border-red-200";
       }
     }
 
@@ -723,10 +736,9 @@
       e.preventDefault();
       const nama = inputNama.value.trim();
       const nisn = inputNisn.value.trim();
-      const kelas = inputKelas.value.trim(); // Ambil nilai kelas 3A
+      const kelas = inputKelas.value.trim();
       const token = inputToken.value.trim();
 
-      // Validasi kelengkapan Input 3A
       if (!nama || !nisn || !kelas) {
         loginAlertText.textContent = "Harap lengkapi Nama, NISN, dan Kelas terlebih dahulu.";
         loginAlert.classList.remove("hidden");
@@ -744,11 +756,11 @@
       loginAlert.classList.add("hidden");
       participant.nama = nama;
       participant.nisn = nisn;
-      participant.kelas = kelas; // Simpan kelas 3A
+      participant.kelas = kelas;
 
       document.getElementById("modal-nama").textContent = participant.nama;
       document.getElementById("modal-nisn").textContent = participant.nisn;
-      document.getElementById("modal-kelas").textContent = participant.kelas; // Tampilkan di modal
+      document.getElementById("modal-kelas").textContent = participant.kelas;
       modalPetunjuk.classList.remove("hidden");
     });
 
@@ -759,7 +771,7 @@
 
       document.getElementById("header-nama").textContent = participant.nama;
       document.getElementById("header-nisn").textContent = participant.nisn;
-      document.getElementById("header-kelas").textContent = participant.kelas; // Tampilkan di header quiz
+      document.getElementById("header-kelas").textContent = participant.kelas;
 
       currentQuestionIndex = 0;
       userAnswers = [null, [], [null, null, null]];
@@ -778,7 +790,7 @@
         updateTimerDisplay();
         if (remainingSeconds <= 0) {
           clearInterval(timerInterval);
-          finishExam(true); // Otomatis selesai jika waktu habis
+          finishExam(true);
         }
       }, 1000);
     }
@@ -889,7 +901,7 @@
 
     function goToQuestion(index) { if (index >= 0 && index < QUESTIONS.length) { currentQuestionIndex = index; renderQuestion(); } }
     document.getElementById("btn-lewati").addEventListener("click", function () { goToQuestion((currentQuestionIndex + 1) % QUESTIONS.length); });
-    document.getElementById("btn-ragu").addEventListener("click", function () { doubtfulFlags[currentQuestionIndex] = doubtfulFlags[currentQuestionIndex]; renderQuestion(); });
+    document.getElementById("btn-ragu").addEventListener("click", function () { doubtfulFlags[currentQuestionIndex] = !doubtfulFlags[currentQuestionIndex]; renderQuestion(); });
 
     const modalKonfirmasi = document.getElementById("modal-konfirmasi-selesai");
     document.getElementById("btn-selesai").addEventListener("click", function () {
@@ -902,7 +914,7 @@
     document.getElementById("btn-batal-selesai").addEventListener("click", function () { modalKonfirmasi.classList.add("hidden"); });
     document.getElementById("btn-ya-selesai").addEventListener("click", function () { modalKonfirmasi.classList.add("hidden"); finishExam(false); });
 
-    // --- FUNGSI PENILAIAN & PENGIRIMAN DATA AKHIR (PERINTAH 3B) ---
+    // --- FUNGSI PENILAIAN & PENGIRIMAN DATA AKHIR ---
     function finishExam(timeIsUp) {
       if (timerInterval) clearInterval(timerInterval);
       let correctCount = 0;
@@ -924,17 +936,27 @@
       document.getElementById("final-correct-count").textContent = correctCount;
       document.getElementById("result-nama").textContent = participant.nama;
       document.getElementById("result-nisn").textContent = participant.nisn;
-      document.getElementById("result-kelas").textContent = participant.kelas; // Tampilkan di hasil
+      document.getElementById("result-kelas").textContent = participant.kelas;
 
-      // --- MENYIAPKAN PAKET DATA UNTUK DIKIRIM (BAGIAN DARI 3B) ---
-      // Pastikan nama variabel di sini sama dengan yang diminta Apps Script di Gambar 11
+      // Format rincian jawaban siswa untuk Spreadsheet
+      const jwb1 = userAnswers[0] || "Kosong";
+      const jwb2 = userAnswers[1].length > 0 
+        ? userAnswers[1].map(idx => "Opsi " + (idx + 1)).join(", ") 
+        : "Kosong";
+      const jwb3 = userAnswers[2].map((val, idx) => `P${idx + 1}: ${val || "-"}`).join(" | ");
+
+      // --- MENYIAPKAN PAKET DATA UNTUK DIKIRIM ---
       let dataUntukDatabase = {
         nama: participant.nama,
+        nisn: participant.nisn,
         kelas: participant.kelas,
-        sekolah: "UPT SD Negeri Jombok", // Data statis sekolah
+        sekolah: "UPT SD Negeri Jombok",
         nilai: formattedScore,
         benar: correctCount,
-        total: QUESTIONS.length // Total soal (3)
+        total: QUESTIONS.length,
+        jawaban1: jwb1,
+        jawaban2: jwb2,
+        jawaban3: jwb3
       };
 
       // Kirim data ke Google Sheets

@@ -113,7 +113,11 @@
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-blue-200">
+<!-- Input untuk Nama Siswa -->
+<input type="text" id="namaSiswa" placeholder="Nama Lengkap">
 
+<!-- Input untuk Kelas Siswa -->
+<input type="text" id="kelasSiswa" placeholder="Kelas, contoh 6A">
   <!-- ===================================================================== -->
   <!-- HALAMAN 1: HALAMAN AWAL / LOGIN PESERTA                               -->
   <!-- ===================================================================== -->
@@ -1119,6 +1123,32 @@
       inputToken.value = "";
       loginAlert.classList.add("hidden");
     });
+    // Ganti XXXXX dengan link Web App rahasia yang Anda dapatkan di Langkah 2C
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbwhFiybTMm4-ITmC5WEmZ93IbldU1bOoeomkcTWrzLAb5Efuq9YfaNQ5ekhuPM3iJE/exec";
+
+// Fungsi untuk mengirim nilai (panggil fungsi ini saat tombol 'SELESAI' diklik)
+function kirimNilai() {
+  // 1. Mengambil nilai dari input HTML dan menyimpannya dalam paket data
+  var dataKirim = {
+    nama: document.getElementById("namaSiswa").value, // Mengambil dari id="namaSiswa"
+    kelas: document.getElementById("kelasSiswa").value, // Mengambil dari id="kelasSiswa"
+    sekolah: "UPT SD Negeri Jombok", // Data statis, Anda bisa mengubahnya
+    nilai: nilaiAkhir, // Pastikan variabel 'nilaiAkhir' sudah didefinisikan di kuis Anda
+    benar: jumlahBenar, // Pastikan variabel 'jumlahBenar' sudah ada
+    total: totalSoal  // Pastikan variabel 'totalSoal' sudah ada
+  };
+
+  // 2. Mengirim paket data ke Google Apps Script melalui metode POST
+  fetch(URL_APPS_SCRIPT, {
+    method: "POST",
+    mode: "no-cors", // Penting untuk menghindari masalah CORS
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dataKirim) // Mengubah objek menjadi string JSON
+  }).then(() => {
+    // 3. Menampilkan pesan sukses setelah data berhasil dikirim
+    alert("Nilai berhasil tersimpan! Terima kasih.");
+  });
+}
   </script>
 </body>
 </html>
